@@ -45,18 +45,12 @@ public class Function
       ArgumentNullException.ThrowIfNull(realm, "SPLUNK_REALM");
 
       var builder = Sdk.CreateTracerProviderBuilder()
-            // Use Add[instrumentation-name]Instrumentation to instrument missing services
-            // Use Nuget to find different instrumentation libraries
             .AddHttpClientInstrumentation()
             .AddAWSInstrumentation()
-            // Use AddSource to add your custom DiagnosticSource source names
-            //.AddSource("My.Source.Name")
             .SetSampler(new AlwaysOnSampler())
             .AddAWSLambdaConfigurations(opts => opts.DisableAwsXRayContextExtraction = true)
             .ConfigureResource(configure => configure
                   .AddService(serviceName, serviceVersion: "1.0.0")
-                  // Different resource detectors can be found at
-                  // https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.AWS#usage
                   .AddAWSEBSDetector())
             .AddOtlpExporter();
 

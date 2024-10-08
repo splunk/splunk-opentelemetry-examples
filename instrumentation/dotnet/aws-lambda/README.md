@@ -14,6 +14,83 @@ The following tools are required to deploy .NET functions into AWS Lambda:
 * Download and install the [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 * Download and install [AWS SAM](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
 
+## Application Overview
+
+If you just want to build and deploy the example, feel free to skip this section. 
+
+The application used here is based on the "Hello World" example application that's part of the 
+[AWS Quick Start templates](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/using-sam-cli-init.html). 
+
+The lambda function was instrumented by adding the following code to Function.cs, 
+which is based on the example found in 
+[Instrument your .NET AWS Lambda function for Splunk Observability Cloud](https://docs.splunk.com/observability/en/gdi/get-data-in/serverless/aws/otel-lambda-layer/instrumentation/dotnet-lambdas.html): 
+
+````
+    public static readonly TracerProvider TracerProvider;
+
+    ...
+
+    static Function()
+    {
+      TracerProvider = ConfigureSplunkTelemetry()!;
+    }
+
+    // Note: Do not forget to point function handler to here.
+    public Task<APIGatewayProxyResponse> TracingFunctionHandler(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
+      => AWSLambdaWrapper.Trace(TracerProvider, FunctionHandler, apigProxyEvent, context);
+
+    private static TracerProvider ConfigureSplunkTelemetry()
+    {
+      var serviceName = Environment.GetEnvironmentVariable("AWS_LAMBDA_FUNCTION_NAME") ?? "Unknown";
+      var accessToken = Environment.GetEnvironmentVariable("SPLUNK_ACCESS_TOKEN")?.Trim();
+      var realm = Environment.GetEnvironmentVariable("SPLUNK_REALM")?.Trim();
+
+      ArgumentNullException.ThrowIfNull(accessToken, "SPLUNK_ACCESS_TOKEN");
+      ArgumentNullException.ThrowIfNull(realm, "SPLUNK_REALM");
+
+      var builder = Sdk.CreateTracerProviderBuilder()
+            .AddHttpClientInstrumentation()
+            .AddAWSInstrumentation()
+            .SetSampler(new AlwaysOnSampler())
+            .AddAWSLambdaConfigurations(opts => opts.DisableAwsXRayContextExtraction = true)
+            .ConfigureResource(configure => configure
+                  .AddService(serviceName, serviceVersion: "1.0.0")
+                  .AddAWSEBSDetector())
+            .AddOtlpExporter();
+
+      return builder.Build()!;
+    }
+````
+
+This required a number of OpenTelemetry packages to be added to the HelloWorld.csproj file: 
+
+````
+  <ItemGroup>
+    ...
+    <PackageReference Include="OpenTelemetry" Version="1.9.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AWS" Version="1.1.0-beta.4" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AWSLambda" Version="1.3.0-beta.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.9.0" />
+    <PackageReference Include="OpenTelemetry.Resources.AWS" Version="1.5.0-beta.1" />
+  </ItemGroup>
+````
+
+The provided template.yaml.base file was then updated to use `TracingFunctionHandler` as the handler
+rather than the default `FunctionHandler`: 
+
+````
+Resources:
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/HelloWorld/
+      Handler: HelloWorld::HelloWorld.Function::TracingFunctionHandler
+````
+
+We also added the SPLUNK_ACCESS_TOKEN and SPLUNK_REALM environment variables to the 
+template.yaml.base file, as well as a layer for the Splunk Observability Collector. 
+
 ## Build and Deploy
 
 Open a command line terminal and navigate to the root of the directory.  
