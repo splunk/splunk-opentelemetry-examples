@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Sample SAM Template for aws-lambda-dotnet8-opentelemetry-example
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 512
+
+Resources:
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/HelloWorld/
+      Handler: HelloWorld::HelloWorld.Function::TracingFunctionHandler
+      Runtime: dotnet8
+      Architectures:
+        - x86_64
+      MemorySize: 512
+      Environment:
+        Variables:
+          SPLUNK_ACCESS_TOKEN: ** Add Access Token Here **
+          SPLUNK_REALM: ** Add Realm Here e.g. us0, us1, eu0, etc. **
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /hello
+            Method: get
+      Layers:
+        - ** Add Splunk OpenTelemetry Collector Layer ARN Here **
+
+Outputs:
+  HelloWorldApi:
+    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+  HelloWorldFunction:
+    Description: "Hello World Lambda Function ARN"
+    Value: !GetAtt HelloWorldFunction.Arn
+  HelloWorldFunctionIamRole:
+    Description: "Implicit IAM Role created for Hello World function"
+    Value: !GetAtt HelloWorldFunctionRole.Arn
