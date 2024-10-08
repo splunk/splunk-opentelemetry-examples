@@ -108,7 +108,7 @@ export AWS_SECRET_ACCESS_KEY="<put the secret access key here>"
 export AWS_SESSION_TOKEN="<put the session token here>"
 ````
 
-### Add the Splunk OpenTelemetry Collector layer
+### Add the Splunk OpenTelemetry Collector and Metrics Extension layers
 
 Our example deploys the Splunk distribution of the OpenTelemetry collector
 to a separate layer within the lambda function.  Lookup the ARN for your 
@@ -128,6 +128,16 @@ here's the ARN for us-west-1:
         - arn:aws:lambda:us-west-1:254067382080:layer:splunk-apm-collector:10
 ````
 
+Optionally, we can also add the Splunk Metrics Extension Layer to the template.yaml file.
+Lookup the ARN for your
+region in Step 7 in [this document](https://docs.splunk.com/observability/en/gdi/get-data-in/serverless/aws/otel-lambda-layer/instrumentation/lambda-language-layers.html#install-the-aws-lambda-layer-for-your-language).
+
+````
+      Layers:
+        - arn:aws:lambda:us-west-1:254067382080:layer:splunk-apm-collector:10
+        - arn:aws:lambda:us-west-1:254067382080:layer:splunk-lambda-metrics:10
+````
+
 ### Add the Splunk Observability Cloud Access Token and Realm
 
 We'll also need to specify the realm and access token for the target
@@ -139,6 +149,7 @@ file as well:
     Variables:
       SPLUNK_ACCESS_TOKEN: <access token>
       SPLUNK_REALM: us1
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment=test
 ````
 
 ### Build the SAM Function
@@ -200,3 +211,11 @@ After a minute or so, you should start to see traces for the lambda function
 appearing in Splunk Observability Cloud: 
 
 ![Trace](./images/trace.png)
+
+### View Metrics in Splunk Observability Cloud
+
+If you added the Splunk Metrics Extension Layer, you'll also see metrics for your
+lambda function by navigating to Infrastructure -> Lambda functions (OTel) and 
+then selecting your lambda function: 
+
+![Trace](./images/lambda-dashboard.png)

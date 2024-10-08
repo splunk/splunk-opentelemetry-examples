@@ -54,7 +54,7 @@ public class Function
                   .AddAWSEBSDetector())
             .AddOtlpExporter();
 
-      return builder.Build()!;
+       return builder.Build()!;
     }
 
     private static async Task<string> GetCallingIP()

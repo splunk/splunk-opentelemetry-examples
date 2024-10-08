@@ -22,6 +22,7 @@ Resources:
         Variables:
           SPLUNK_ACCESS_TOKEN: ** Add Access Token Here **
           SPLUNK_REALM: ** Add Realm Here e.g. us0, us1, eu0, etc. **
+          OTEL_RESOURCE_ATTRIBUTES: deployment.environment=** Add the Name of Your Environment Here **
       Events:
         HelloWorld:
           Type: Api
