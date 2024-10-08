@@ -37,6 +37,12 @@ Our example deploys the Splunk distribution of the OpenTelemetry collector
 to a separate layer within the lambda function.  Lookup the ARN for your 
 region in Step 6 in [this document](https://docs.splunk.com/observability/en/gdi/get-data-in/serverless/aws/otel-lambda-layer/instrumentation/lambda-language-layers.html#install-the-aws-lambda-layer-for-your-language). 
 
+Let's make a copy of the template.yaml.base file: 
+
+````
+cp template.yaml.base template.yaml
+````
+
 Then, open the template.yaml file and add the ARN there.  For example, 
 here's the ARN for us-west-1: 
 
@@ -54,8 +60,8 @@ file as well:
 ````
   Environment: 
     Variables:
-      SPLUNK_ACCESS_TOKEN: ADD_ACCESS_TOKEN_HERE
-      SPLUNK_REALM: ADD_REALM_HERE
+      SPLUNK_ACCESS_TOKEN: <access token>
+      SPLUNK_REALM: us1
 ````
 
 ### Build the SAM Function
@@ -106,3 +112,14 @@ https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello
 
 Use the API Gateway Endpoint URL provided in the previous step to test the SAM function. 
 You should see a response such as the following: 
+
+````
+{"message":"hello world","location":"54.177.68.123"}
+````
+
+### View Traces in Splunk Observability Cloud
+
+After a minute or so, you should start to see traces for the lambda function
+appearing in Splunk Observability Cloud: 
+
+![Trace](./images/trace.png)

@@ -58,12 +58,7 @@ public class Function
                   // Different resource detectors can be found at
                   // https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.AWS#usage
                   .AddAWSEBSDetector())
-            .AddOtlpExporter(opts =>
-            {
-              opts.Endpoint = new Uri($"https://ingest.{realm}.signalfx.com/v2/trace/otlp");
-              opts.Protocol = OtlpExportProtocol.HttpProtobuf;
-              opts.Headers = $"X-SF-TOKEN={accessToken}";
-            });
+            .AddOtlpExporter();
 
       return builder.Build()!;
     }
