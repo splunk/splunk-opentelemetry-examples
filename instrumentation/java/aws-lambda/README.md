@@ -62,6 +62,10 @@ We then added the trace context fields and service name to the log4j2.xml file a
     </Lambda>
 ````
 
+More details on log4j2 configuration can be found in [ContextData Instrumentation for Log4j2 version 2.17 and higher](https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/main/instrumentation/log4j/log4j-context-data/log4j-context-data-2.17/library-autoconfigure). 
+
+
+
 ## Build and Deploy
 
 Open a command line terminal and navigate to the root of the directory.  
