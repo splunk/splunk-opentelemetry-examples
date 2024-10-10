@@ -15,15 +15,15 @@ This category includes examples that demonstrate how to instrument applications
 with OpenTelemetry that use combinations of the following languages and target
 deployment environments: 
 
-| Language / Environment | Java                                 | .NET                                      | Node.js                                     | Python | Go  |
-|------------------------|--------------------------------------|-------------------------------------------|---------------------------------------------|--------|-----|
-| Linux | [Link](./instrumentation/java/linux) |                                           |                                             | |     |
-| Windows |                                      |                                           |                                             | |     |
-| Kubernetes |                                      |                                           |                                             | |     |
-| AWS ECS |                                      |                                           |                                             | |     |
-| AWS Lambda Function | [Link](./instrumentation/java/aws-lambda)  | [Link](./instrumentation/dotnet/aws-lambda)|  | |     |
-| Azure Function |                                      |                                           |                                             | |     |
-| Google Cloud Function |                                      |                                           |                                             | |     |
+| Language / Environment | Java                                      | .NET                                      | Node.js                                     | Python | Go  |
+|------------------------|-------------------------------------------|-------------------------------------------|---------------------------------------------|--------|-----|
+| Linux | [Link](./instrumentation/java/linux)      |                                           |                                             | |     |
+| Windows |                                           |                                           |                                             | |     |
+| Kubernetes | [Link](./instrumentation/java/k8s)        |                                           |                                             | |     |
+| AWS ECS |                                           |                                           |                                             | |     |
+| AWS Lambda Function | [Link](./instrumentation/java/aws-lambda) | [Link](./instrumentation/dotnet/aws-lambda)|  | |     |
+| Azure Function |                                           |                                           |                                             | |     |
+| Google Cloud Function |                                           |                                           |                                             | |     |
 
 Examples for each combination will be added over time. 
 
