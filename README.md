@@ -20,7 +20,7 @@ deployment environments:
 | Linux | [Link](./instrumentation/java/linux)      |                                           |                                             | |     |
 | Windows |                                           |                                           |                                             | |     |
 | Kubernetes | [Link](./instrumentation/java/k8s)        |                                           |                                             | |     |
-| AWS ECS |                                           |                                           |                                             | |     |
+| AWS ECS | [Link](./instrumentation/java/aws-ecs)    |                                           |                                             | |     |
 | AWS Lambda Function | [Link](./instrumentation/java/aws-lambda) | [Link](./instrumentation/dotnet/aws-lambda)|  | |     |
 | Azure Function |                                           |                                           |                                             | |     |
 | Google Cloud Function |                                           |                                           |                                             | |     |

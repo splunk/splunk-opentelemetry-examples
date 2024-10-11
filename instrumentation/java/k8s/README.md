@@ -37,7 +37,7 @@ your own image.
 You can use the following command to build the Docker image: 
 
 ````
-docker build -t doorgame:1.0 doorgame
+docker build --platform="linux/amd64" -t doorgame:1.0 doorgame
 ````
 
 Note that the Dockerfile adds the latest version of the Splunk Java agent 
@@ -82,6 +82,31 @@ kubectl command to deploy the doorgame.yaml manifest file:
 
 ````
 kubectl apply -f ./doorgame/doorgame.yaml
+````
+
+The Docker image already includes the splunk-otel-javaagent.jar file, and adds it
+to the Java startup command.  The doorgame.yaml manifest file adds to this 
+configuration by setting the following environment variables, to configure how the 
+Java agent gathers and exports data to the collector running within the cluster: 
+
+````
+  env:
+    - name: PORT
+      value: "9090"
+    - name: NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: "http://$(NODE_IP):4318"
+    - name: OTEL_SERVICE_NAME
+      value: "doorgame"
+    - name: OTEL_PROPAGATORS
+      value: "tracecontext,baggage"
+    - name: SPLUNK_PROFILER_ENABLED
+      value: "true"
+    - name: SPLUNK_PROFILER_MEMORY_ENABLED
+      value: "true"
 ````
 
 To test the application, we'll need to get the Cluster IP: 
