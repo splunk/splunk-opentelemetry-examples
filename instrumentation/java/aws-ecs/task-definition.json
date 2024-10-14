@@ -70,6 +70,14 @@
                 {
                     "name": "ECS_METADATA_EXCLUDED_IMAGES",
                     "value": "[\"quay.io/signalfx/splunk-otel-collector:latest\"]"
+                },
+                {
+                    "name": "SPLUNK_HEC_TOKEN",
+                    "value": "<HEC Token>"
+                },
+                {
+                    "name": "SPLUNK_HEC_URL",
+                    "value": "https://<your domain>.splunkcloud.com:443/services/collector/event"
                 }
             ],
             "environmentFiles": [],
