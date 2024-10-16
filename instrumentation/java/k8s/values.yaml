@@ -1,0 +1,50 @@
+clusterName: <Cluster Name>
+environment: <Environment Name>
+
+splunkObservability:
+  accessToken: <Access Token>
+  realm: <Realm>
+  profilingEnabled: true
+
+splunkPlatform:
+  endpoint: https://<HEC URL>:443/services/collector/event
+  token: <HEC token>
+  index: <Index>
+
+gateway:
+  enabled: false
+
+agent:
+  config:
+    service:
+      pipelines:
+        logs:
+          exporters:
+            - splunk_hec/o11y
+            - splunk_hec/platform_logs
+          processors:
+            - memory_limiter
+            - k8sattributes
+            - filter/logs
+            - batch
+            - resourcedetection
+            - resource
+            - resource/logs
+            - resource/add_environment
+          receivers:
+            - filelog
+            - fluentforward
+        logs/otlp:
+          exporters:
+            - splunk_hec/o11y
+            - splunk_hec/platform_logs
+          processors:
+            - memory_limiter
+            - k8sattributes
+            - batch
+            - resourcedetection
+            - resource
+            - resource/logs
+            - resource/add_environment
+          receivers:
+            - otlp

@@ -200,3 +200,62 @@ Clicking on this link brings us to Log Observer Connect, which filters on log en
 related to this specific trace: 
 
 ![Log Observer Connect](./images/log_observer_connect.png)
+
+### Handling Duplicate Logs
+
+The default configuration may result in duplicate log events sent to Splunk platform. 
+The first set of log events comes from the file log receiver which reads the logs 
+of all Kubernetes pods.  The second set of logs comes from the Java agent, which are sent 
+to the collector via OTLP. 
+
+There are two ways to avoid duplicate logs: 
+
+#### Option 1: configure the Java agent to disable log export
+
+We can set the `OTEL_LOGS_EXPORTER` environment variable to "none" to prevent 
+the Java agent from exporting logs.  The equivalent JVM property is `-Dotel.logs.exporter`. 
+
+This option is simple, however we'd lose the trace context that the Java agent 
+automatically adds when it exports logs.  To address this, we could follow the steps in 
+[Configure your logging library](https://docs.splunk.com/observability/en/gdi/get-data-in/application/java/instrumentation/connect-traces-logs.html#configure-your-logging-library) 
+to add the trace context explicitly to the logging configuration used by the application. 
+
+#### Option 2: use annotations to tell the collector to avoid exporting certain logs 
+
+We can add an annotation to the Kubernetes deployment manifest as follows: 
+
+````
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: doorgame
+spec:
+  selector:
+    matchLabels:
+      app: doorgame
+  template:
+    metadata:
+      labels:
+        app: doorgame
+      annotations:
+        splunk.com/exclude: "true"
+````
+
+This ensures that the collector will not export logs for any pods with this annotation. To apply the changes, run: 
+
+````
+kubectl apply -f ./doorgame/doorgame.yaml
+````
+
+With this option we'd have to update the collector configuration as well by providing 
+a custom `values.yaml`, like the example [here](./values.yaml). 
+
+This configuration ensures that the splunk.com/exclude annotation is only applied to the logs 
+that come from the filelog and fluentforward receivers, so that any logs that come from the 
+Java agent via the otlp receiver are not excluded. 
+
+We would then update the collector configuration with the following command: 
+
+````
+helm upgrade splunk-otel-collector -f ../k8s/values.yaml splunk-otel-collector-chart/splunk-otel-collector
+````

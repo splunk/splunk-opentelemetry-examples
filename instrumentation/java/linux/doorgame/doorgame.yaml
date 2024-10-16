@@ -10,6 +10,8 @@ spec:
     metadata:
       labels:
         app: doorgame
+#      annotations:
+#        splunk.com/exclude: "true"
     spec:
       tolerations:
       nodeSelector:
