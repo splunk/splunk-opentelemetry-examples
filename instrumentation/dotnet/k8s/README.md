@@ -87,6 +87,9 @@ docker tag sampledotnetapp:1.0 ghcr.io/splunk/sampledotnetapp:1.0
 docker push ghcr.io/splunk/sampledotnetapp:1.0
 ````
 
+See [Authenticating with a personal access token](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-with-a-personal-access-token-classic) 
+for details on how to authenticate with GitHub before pushing the image. 
+
 ### Deploy to Kubernetes
 
 Now that we have our Docker image, we can deploy the application to
@@ -158,10 +161,8 @@ heap used by each generation in the CLR:
 ### View Logs with Trace Context
 
 The Splunk Distribution of OpenTelemetry .NET automatically adds trace context
-to logs. However, it doesn't add this context to the actual log file (unless
-you explicitly configure the logging framework to do so).  Instead, the trace
-context is added behind the scenes to the log events exported to the
-OpenTelemetry Collector.
+to logs. However, for this example we've chosen to use our own log formatter instead, 
+which you can find in the SplunkTelemetryConsoleFormatter class. 
 
 The OpenTelemetry Collector can be configured to export log data to
 Splunk platform using the Splunk HEC exporter.  The logs can then be made
@@ -177,7 +178,7 @@ Related Content link at the bottom right:
 Clicking on this link brings us to Log Observer Connect, which filters on log entries
 related to this specific trace:
 
-TODO
+![Log Observer Connect](./images/log_observer_connect.png)
 
 ### Handling Duplicate Logs
 
@@ -186,54 +187,24 @@ The first set of log events comes from the file log receiver which reads the log
 of all Kubernetes pods.  The second set of logs comes from the .NET agent, which are sent
 to the collector via OTLP.
 
-There are two ways to avoid duplicate logs:
+In this example, we set the `OTEL_LOGS_EXPORTER` environment variable to "none" 
+to prevent the .NET agent from exporting logs.  
 
-#### Option 1: configure the .NET agent to disable log export
-
-We can set the `OTEL_LOGS_EXPORTER` environment variable to "none" to prevent
-the .NET agent from exporting logs.  
-
-This option is simple, however we'd lose the trace context that the .NET agent
-automatically adds when it exports logs.  To address this, we could follow the steps in
-[Manual log to trace correlation](https://docs.splunk.com/observability/en/gdi/get-data-in/application/otel-dotnet/instrumentation/connect-traces-logs.html#manual-log-to-trace-correlation)
-to add the trace context explicitly to the logging configuration used by the application.
-
-#### Option 2: use annotations to tell the collector to avoid exporting certain logs
-
-We can add an annotation to the Kubernetes deployment manifest as follows:
+We also added the following custom code to the Program.cs class, which adds the trace context 
+to the log entries that will be parsed by the file log receiver: 
 
 ````
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: dotnetapp
-spec:
-  selector:
-    matchLabels:
-      app: sampledotnetapp
-  template:
-    metadata:
-      labels:
-        app: sampledotnetapp
-      annotations:
-        splunk.com/exclude: "true"
-````
+builder.Logging.AddSimpleConsole(options =>
+{
+    options.IncludeScopes = true;
+});
 
-This ensures that the collector will not export logs for any pods with this annotation. To apply the changes, run:
-
-````
-kubectl apply -f ./dotnetapp.yaml
-````
-
-With this option we'd have to update the collector configuration as well by providing
-a custom `values.yaml`, like the example [here](../../java/k8s/values.yaml).
-
-This configuration ensures that the splunk.com/exclude annotation is only applied to the logs
-that come from the filelog and fluentforward receivers, so that any logs that come from the
-.NET agent via the otlp receiver are not excluded.
-
-We would then update the collector configuration with the following command:
-
-````
-helm upgrade splunk-otel-collector -f ../k8s/values.yaml splunk-otel-collector-chart/splunk-otel-collector
+builder.Logging.Configure(options =>
+{
+    options.ActivityTrackingOptions = ActivityTrackingOptions.SpanId
+                                       | ActivityTrackingOptions.TraceId
+                                       | ActivityTrackingOptions.ParentId
+                                       | ActivityTrackingOptions.Baggage
+                                       | ActivityTrackingOptions.Tags;
+});
 ````

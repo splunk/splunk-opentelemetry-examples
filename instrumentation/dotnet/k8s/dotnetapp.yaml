@@ -10,8 +10,6 @@ spec:
     metadata:
       labels:
         app: sampledotnetapp
-#      annotations:
-#        splunk.com/exclude: "true"
     spec:
       tolerations:
       nodeSelector:
@@ -33,6 +31,8 @@ spec:
               value: "http://$(NODE_IP):4318"
             - name: OTEL_SERVICE_NAME
               value: "sampledotnetapp"
+            - name: OTEL_LOGS_EXPORTER
+              value: "none"
           resources:
             requests:
               cpu: 150m
