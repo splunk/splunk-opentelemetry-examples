@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnetapp
+spec:
+  selector:
+    matchLabels:
+      app: sampledotnetapp
+  template:
+    metadata:
+      labels:
+        app: sampledotnetapp
+#      annotations:
+#        splunk.com/exclude: "true"
+    spec:
+      tolerations:
+      nodeSelector:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: sampledotnetapp
+          image: ghcr.io/splunk/sampledotnetapp:1.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://$(NODE_IP):4318"
+            - name: OTEL_SERVICE_NAME
+              value: "sampledotnetapp"
+          resources:
+            requests:
+              cpu: 150m
+              memory: 256Mi
+            limits:
+              cpu: 300m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sampledotnetapp
+spec:
+  type: LoadBalancer
+  selector:
+    app: sampledotnetapp
+  ports:
+    - protocol: TCP
+      port: 8181
+      targetPort: 8080
