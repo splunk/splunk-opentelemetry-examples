@@ -119,7 +119,13 @@ the collector running within the cluster:
       value: "http://$(NODE_IP):4318"
     - name: OTEL_SERVICE_NAME
       value: "sampledotnetapp"
+    - name: OTEL_LOGS_EXPORTER
+      value: "none"
 ````
+
+Note that we've set `OTEL_LOGS_EXPORTER` to `none` to avoid duplicate logs being exported, 
+as typically the file log receiver is used in Kubernetes to parse application logs, and 
+having both enabled would result in duplicates.
 
 To test the application, we'll need to get the Cluster IP:
 
@@ -160,9 +166,36 @@ heap used by each generation in the CLR:
 
 ### View Logs with Trace Context
 
-The Splunk Distribution of OpenTelemetry .NET automatically adds trace context
-to logs. However, for this example we've chosen to use our own log formatter instead, 
-which you can find in the SplunkTelemetryConsoleFormatter class. 
+We've included some custom code with this example to demonstrate how trace context can 
+be added to log entries.  You can find this code in the
+SplunkTelemetryConfiguration.cs file: 
+
+````
+   public static void ConfigureLogger(ILoggingBuilder logging)
+   {
+       logging.AddSimpleConsole(options =>
+       {
+           options.IncludeScopes = true;
+       });
+
+        logging.Configure(options =>
+        {
+            options.ActivityTrackingOptions = ActivityTrackingOptions.SpanId
+                                               | ActivityTrackingOptions.TraceId
+                                               | ActivityTrackingOptions.ParentId
+                                               | ActivityTrackingOptions.Baggage
+                                               | ActivityTrackingOptions.Tags;
+        }).AddConsole(options =>
+        {
+           options.FormatterName = "splunkLogsJson";
+        });
+
+        logging.AddConsoleFormatter<SplunkTelemetryConsoleFormatter, ConsoleFormatterOptions>();
+   }
+````
+
+We've included a custom log formatter in the same file, to customize the 
+application log format. 
 
 The OpenTelemetry Collector can be configured to export log data to
 Splunk platform using the Splunk HEC exporter.  The logs can then be made
@@ -180,31 +213,3 @@ related to this specific trace:
 
 ![Log Observer Connect](./images/log_observer_connect.png)
 
-### Handling Duplicate Logs
-
-The default configuration may result in duplicate log events sent to Splunk platform.
-The first set of log events comes from the file log receiver which reads the logs
-of all Kubernetes pods.  The second set of logs comes from the .NET agent, which are sent
-to the collector via OTLP.
-
-In this example, we set the `OTEL_LOGS_EXPORTER` environment variable to "none" 
-to prevent the .NET agent from exporting logs.  
-
-We also added the following custom code to the Program.cs class, which adds the trace context 
-to the log entries that will be parsed by the file log receiver: 
-
-````
-builder.Logging.AddSimpleConsole(options =>
-{
-    options.IncludeScopes = true;
-});
-
-builder.Logging.Configure(options =>
-{
-    options.ActivityTrackingOptions = ActivityTrackingOptions.SpanId
-                                       | ActivityTrackingOptions.TraceId
-                                       | ActivityTrackingOptions.ParentId
-                                       | ActivityTrackingOptions.Baggage
-                                       | ActivityTrackingOptions.Tags;
-});
-````

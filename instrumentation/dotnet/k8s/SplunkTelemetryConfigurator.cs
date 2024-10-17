@@ -6,6 +6,31 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace SplunkTelemetry
 {
+   public static class SplunkTelemetryConfigurator
+   {
+       public static void ConfigureLogger(ILoggingBuilder logging)
+       {
+           logging.AddSimpleConsole(options =>
+           {
+               options.IncludeScopes = true;
+           });
+
+            logging.Configure(options =>
+            {
+                options.ActivityTrackingOptions = ActivityTrackingOptions.SpanId
+                                                   | ActivityTrackingOptions.TraceId
+                                                   | ActivityTrackingOptions.ParentId
+                                                   | ActivityTrackingOptions.Baggage
+                                                   | ActivityTrackingOptions.Tags;
+            }).AddConsole(options =>
+            {
+               options.FormatterName = "splunkLogsJson";
+            });
+
+            logging.AddConsoleFormatter<SplunkTelemetryConsoleFormatter, ConsoleFormatterOptions>();
+       }
+   }
+
    public class SplunkTelemetryConsoleFormatter : ConsoleFormatter
    {
        public SplunkTelemetryConsoleFormatter() : base("splunkLogsJson") { }
