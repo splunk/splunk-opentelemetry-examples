@@ -1,4 +1,4 @@
-# Instrumenting a Java Application in Amazon ECS with OpenTelemetry
+# Instrumenting a .NET Application in Amazon ECS with OpenTelemetry
 
 This example uses the same sample application and Docker image that was used in the
 [dotnet/k8s](../k8s) example.
@@ -164,11 +164,11 @@ Point your browser to http://\<ECS IP Address\>:8080.
 
 The application should look like the following:
 
-![Door Game Entry Screen](../k8s/images/sample_app.png)
+![Application Home Page](../k8s/images/sample_app.png)
 
 ### View Traces in Splunk Observability Cloud
 
-After a minute or so, you should start to see traces for the Java application
+After a minute or so, you should start to see traces for the .NET application
 appearing in Splunk Observability Cloud:
 
 ![Trace](./images/ecs-trace.png)
