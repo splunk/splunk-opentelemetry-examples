@@ -21,48 +21,86 @@ If you just want to build and deploy the example, feel free to skip this section
 The application used here is based on the "Hello World" example application that's part of the 
 [AWS Quick Start templates](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/using-sam-cli-init.html). 
 
-The lambda function was instrumented by adding the following code to Function.cs, 
-which is based on the example found in 
+We added a helper class named [SplunkTelemetryConfiguration](./src/HelloWorld/SplunkTelemetryConfigurator.cs), and included code to 
+assist with initializing the tracer, as well as a custom logger to inject the trace context. 
+
+The tracer initialization is based on the example found in 
 [Instrument your .NET AWS Lambda function for Splunk Observability Cloud](https://docs.splunk.com/observability/en/gdi/get-data-in/serverless/aws/otel-lambda-layer/instrumentation/dotnet-lambdas.html): 
 
 ````
-    public static readonly TracerProvider TracerProvider;
+   public static TracerProvider ConfigureSplunkTelemetry()
+   {
+     var serviceName = Environment.GetEnvironmentVariable("AWS_LAMBDA_FUNCTION_NAME") ?? "Unknown";
+     var accessToken = Environment.GetEnvironmentVariable("SPLUNK_ACCESS_TOKEN")?.Trim();
+     var realm = Environment.GetEnvironmentVariable("SPLUNK_REALM")?.Trim();
 
-    ...
+     ArgumentNullException.ThrowIfNull(accessToken, "SPLUNK_ACCESS_TOKEN");
+     ArgumentNullException.ThrowIfNull(realm, "SPLUNK_REALM");
+
+     var builder = Sdk.CreateTracerProviderBuilder()
+           .AddHttpClientInstrumentation()
+           .AddAWSInstrumentation()
+           .SetSampler(new AlwaysOnSampler())
+           .AddAWSLambdaConfigurations(opts => opts.DisableAwsXRayContextExtraction = true)
+           .ConfigureResource(configure => configure
+                 .AddService(serviceName, serviceVersion: "1.0.0")
+                 .AddAWSEBSDetector())
+           .AddOtlpExporter();
+
+      return builder.Build()!;
+   }
+````
+
+The custom logger injects the trace context as follows: 
+
+````
+   public static ILogger<T> ConfigureLogger<T>()
+   {
+       var loggerFactory = LoggerFactory.Create(logging =>
+       {
+           logging.ClearProviders(); // Clear existing providers
+           logging.Configure(options =>
+           {
+               options.ActivityTrackingOptions = ActivityTrackingOptions.SpanId
+                               | ActivityTrackingOptions.TraceId
+                               | ActivityTrackingOptions.ParentId
+                               | ActivityTrackingOptions.Baggage
+                               | ActivityTrackingOptions.Tags;
+           }).AddConsole(options =>
+           {
+               options.FormatterName = "splunkLogsJson";
+           });
+           logging.AddConsoleFormatter<SplunkTelemetryConsoleFormatter, ConsoleFormatterOptions>();
+       });
+
+       return loggerFactory.CreateLogger<T>();
+   }
+````
+
+The [Lambda function](./src/HelloWorld/Function.cs) was then modified to configure 
+OpenTelemetry using the helper class as follows: 
+
+````
+public class Function
+{
+    private static readonly TracerProvider TracerProvider;
+    private static readonly ILogger<Function> _logger;
+    private static readonly HttpClient client = new HttpClient();
 
     static Function()
     {
-      TracerProvider = ConfigureSplunkTelemetry()!;
+        TracerProvider = SplunkTelemetryConfigurator.ConfigureSplunkTelemetry()!;
+        _logger = SplunkTelemetryConfigurator.ConfigureLogger<Function>();
     }
 
     // Note: Do not forget to point function handler to here.
     public Task<APIGatewayProxyResponse> TracingFunctionHandler(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
       => AWSLambdaWrapper.Trace(TracerProvider, FunctionHandler, apigProxyEvent, context);
-
-    private static TracerProvider ConfigureSplunkTelemetry()
-    {
-      var serviceName = Environment.GetEnvironmentVariable("AWS_LAMBDA_FUNCTION_NAME") ?? "Unknown";
-      var accessToken = Environment.GetEnvironmentVariable("SPLUNK_ACCESS_TOKEN")?.Trim();
-      var realm = Environment.GetEnvironmentVariable("SPLUNK_REALM")?.Trim();
-
-      ArgumentNullException.ThrowIfNull(accessToken, "SPLUNK_ACCESS_TOKEN");
-      ArgumentNullException.ThrowIfNull(realm, "SPLUNK_REALM");
-
-      var builder = Sdk.CreateTracerProviderBuilder()
-            .AddHttpClientInstrumentation()
-            .AddAWSInstrumentation()
-            .SetSampler(new AlwaysOnSampler())
-            .AddAWSLambdaConfigurations(opts => opts.DisableAwsXRayContextExtraction = true)
-            .ConfigureResource(configure => configure
-                  .AddService(serviceName, serviceVersion: "1.0.0")
-                  .AddAWSEBSDetector())
-            .AddOtlpExporter();
-
-      return builder.Build()!;
-    }
+    ...
+}
 ````
 
-This required a number of OpenTelemetry packages to be added to the HelloWorld.csproj file: 
+These code changes required a number of packages to be added to the HelloWorld.csproj file: 
 
 ````
   <ItemGroup>
@@ -73,6 +111,9 @@ This required a number of OpenTelemetry packages to be added to the HelloWorld.c
     <PackageReference Include="OpenTelemetry.Instrumentation.AWSLambda" Version="1.3.0-beta.1" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.9.0" />
     <PackageReference Include="OpenTelemetry.Resources.AWS" Version="1.5.0-beta.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
   </ItemGroup>
 ````
 
@@ -219,3 +260,34 @@ lambda function by navigating to Infrastructure -> Lambda functions (OTel) and
 then selecting your lambda function: 
 
 ![Trace](./images/lambda-dashboard.png)
+
+### View Logs in CloudWatch
+
+Lambda functions send their logs to AWS CloudWatch.  In the following example, 
+we can see that the trace context was injected successfully into the logs 
+using the custom logging changes described above: 
+
+````
+{
+    "event_id": 0,
+    "log_level": "information",
+    "category": "HelloWorld.Function",
+    "message": "Returning response: [message, hello world], [location, 3.101.146.139]",
+    "timestamp": "2024-10-24T21:28:04.1522807Z",
+    "service.name": "Unknown",
+    "severity": "INFO",
+    "span_id": "9a6e3418afc4e5f7",
+    "trace_id": "326333ab1b4b015f1affa32d48fa12b6",
+    "parent_id": "0000000000000000",
+    "tag_faas.trigger": "http",
+    "tag_faas.name": "dotnet8-test-HelloWorldFunction-BEIwuCTr5dLQ",
+    "tag_faas.execution": "af34b643-776c-456a-ae49-bbd70bae37d5",
+    "tag_faas.id": "arn:aws:lambda:us-west-1:539****08140:function:dotnet8-test-HelloWorldFunction-BEIwuCTr5dLQ",
+    "tag_cloud.account.id": "539****08140",
+    "tag_http.scheme": "https",
+    "tag_http.target": "/Prod/hello/",
+    "tag_http.method": "GET",
+    "tag_net.host.name": "5uai5jfjwk.execute-api.us-west-1.amazonaws.com",
+    "tag_net.host.port": 443
+}
+````
