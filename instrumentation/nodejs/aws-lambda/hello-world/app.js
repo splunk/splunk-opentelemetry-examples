@@ -1,4 +1,5 @@
 const axios = require('axios')
+const logger = require('pino')()
 const url = 'http://checkip.amazonaws.com/';
 let response;
 
@@ -16,11 +17,11 @@ let response;
  */
 exports.lambdaHandler = async (event, context) => {
     try {
-        console.log('About to get the IP Address...');
+        logger.info('About to get the IP Address...');
 
         const ret = await axios(url);
 
-        console.log('Successfully retrieved the IP Address, returning the result now.');
+        logger.info('Successfully retrieved the IP Address, returning the result now.');
 
         response = {
             'statusCode': 200,
