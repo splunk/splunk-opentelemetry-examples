@@ -1,22 +1,35 @@
 package main
 
 import (
+    "context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-    "context"
     "go.opentelemetry.io/otel"
     "github.com/signalfx/splunk-otel-go/distro"
     "go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda"
     "go.opentelemetry.io/otel/propagation"
+    "go.opentelemetry.io/otel/trace"
+
+    "go.uber.org/zap"
 )
 
-func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+var logger *zap.Logger
+
+func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+
+    loggerWithTraceContext := withTraceMetadata(ctx, logger)
+
 	var greeting string
+
+	loggerWithTraceContext.Info("About to retrieve the SourceIP")
+
 	sourceIP := request.RequestContext.Identity.SourceIP
+
+	loggerWithTraceContext.Info("Successfully retrieved the SourceIP, returning the greeting")
 
 	if sourceIP == "" {
 		greeting = "Hello, world!\n"
@@ -43,6 +56,20 @@ func customEventToCarrier(eventJSON []byte) propagation.TextMapCarrier {
 	return propagation.HeaderCarrier(header)
 }
 
+func withTraceMetadata(ctx context.Context, logger *zap.Logger) *zap.Logger {
+        spanContext := trace.SpanContextFromContext(ctx)
+        if !spanContext.IsValid() {
+                // ctx does not contain a valid span.
+                // There is no trace metadata to add.
+                return logger
+        }
+        return logger.With(
+                zap.String("trace_id", spanContext.TraceID().String()),
+                zap.String("span_id", spanContext.SpanID().String()),
+                zap.String("trace_flags", spanContext.TraceFlags().String()),
+        )
+}
+
 func main() {
 	ctx := context.Background()
 
@@ -56,6 +83,12 @@ func main() {
 			panic(err)
 		}
 	}()
+
+    logger, err = zap.NewProduction()
+    if err != nil {
+            panic(err)
+    }
+    defer logger.Sync()
 
     flusher := otel.GetTracerProvider().(otellambda.Flusher)
 
