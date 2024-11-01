@@ -1,8 +1,13 @@
 using System.IO;
 using System.Text.Json;
+using System.Diagnostics;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Logging.Abstractions;
+
+using Amazon.Lambda.Core;
+using Amazon.Lambda.APIGatewayEvents;
 
 using OpenTelemetry;
 using OpenTelemetry.Trace;
@@ -58,6 +63,14 @@ namespace SplunkTelemetry
 
            return loggerFactory.CreateLogger<T>();
        }
+
+       public static void AddSpanAttributes(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
+       {
+           // Add span attributes using the APIGatewayProxyRequest and ILambdaContext
+           // if needed
+           var activity = Activity.Current;
+           activity?.SetTag("sometag", "somevalue");
+        }
    }
 
    public class SplunkTelemetryConsoleFormatter : ConsoleFormatter

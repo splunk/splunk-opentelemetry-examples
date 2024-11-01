@@ -46,16 +46,21 @@ public class Function
         client.DefaultRequestHeaders.Add("User-Agent", "AWS Lambda .Net Client");
 
         var msg = await client.GetStringAsync("http://checkip.amazonaws.com/").ConfigureAwait(continueOnCapturedContext:false);
+        var location = msg.Replace("\n","");
 
-        return msg.Replace("\n","");
+
+        return location;
     }
 
     public async Task<APIGatewayProxyResponse> FunctionHandler(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
     {
-
         _logger.LogInformation("In the function handler");
 
+        // add span attributes based on the provide API gateway event and Lambda context
+        SplunkTelemetryConfigurator.AddSpanAttributes(apigProxyEvent, context);
+
         var location = await GetCallingIP();
+
         var body = new Dictionary<string, string>
         {
             { "message", "hello world" },
