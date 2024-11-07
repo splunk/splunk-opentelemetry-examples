@@ -90,8 +90,8 @@ when creating the layer, to ensure the layer includes SplunkOpenTelemetryLambdaL
 It should respond with something like the following: 
 
 ````
-Upload complete to s3://splunk-opentelemetry-lambda-layer-example/SplunkOpenTelemetryLambdaLayer-638665871802266230/packages.zip
-Layer publish with arn arn:aws:lambda:us-west-1:539254608140:layer:SplunkOpenTelemetryLambdaLayer:4
+Upload complete to s3://splunk-opentelemetry-lambda-layer-example/SplunkOpenTelemetryLambdaLayer-638665886711652550/packages.zip
+Layer publish with arn arn:aws:lambda:us-west-1:539254608140:layer:SplunkOpenTelemetryLambdaLayer:5
 ````
 
 Make a note of the ARN as we'll need it below. 
@@ -151,7 +151,7 @@ was created:
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
-    <add key="local-packages" value="../SplunkOpenTelemetryLambdaLayer/bin/Release" />
+    <add key="local-packages" value="../SplunkOpenTelemetryLambdaHelper/bin/Release" />
   </packageSources>
 </configuration>
 ````
@@ -161,7 +161,7 @@ Then we modified the HelloWorld.csproj file to reference the NuGet package:
 ````
   <ItemGroup>
     ...
-    <PackageReference Include="SplunkOpenTelemetryLambdaLayer" Version="1.0.0" />
+    <PackageReference Include="SplunkOpenTelemetryLambdaHelper" Version="1.0.0" />
   </ItemGroup>
 ````
 
@@ -169,7 +169,7 @@ We also want to modify the template.yaml file to include the Lambda layer:
 
 ````
       Layers:
-        - arn:aws:lambda:us-west-1:539254608140:layer:SplunkOpenTelemetryLambdaLayer:4
+        - arn:aws:lambda:us-west-1:539254608140:layer:SplunkOpenTelemetryLambdaLayer:5
         - ...
 ````
 
