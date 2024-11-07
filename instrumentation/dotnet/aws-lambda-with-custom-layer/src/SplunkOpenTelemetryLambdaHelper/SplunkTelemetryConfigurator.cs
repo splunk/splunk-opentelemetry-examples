@@ -64,11 +64,9 @@ namespace SplunkTelemetry
            return loggerFactory.CreateLogger<T>();
        }
 
-       public static void AddSpanAttributes(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
+       public static void AddSpanAttributes(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context, Activity activity)
        {
            // Add span attributes using the APIGatewayProxyRequest and ILambdaContext
-           // if needed
-           var activity = Activity.Current;
            activity?.SetTag("sometag", "somevalue");
         }
    }

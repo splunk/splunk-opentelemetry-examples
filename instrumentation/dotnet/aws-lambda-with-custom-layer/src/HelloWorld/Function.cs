@@ -56,8 +56,10 @@ public class Function
     {
         _logger.LogInformation("In the function handler");
 
+        var activity = Activity.Current;
+
         // add span attributes based on the provide API gateway event and Lambda context
-        SplunkTelemetryConfigurator.AddSpanAttributes(apigProxyEvent, context);
+        SplunkTelemetryConfigurator.AddSpanAttributes(apigProxyEvent, context, activity);
 
         var location = await GetCallingIP();
 

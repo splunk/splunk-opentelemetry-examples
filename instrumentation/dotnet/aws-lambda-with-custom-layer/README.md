@@ -90,11 +90,55 @@ when creating the layer, to ensure the layer includes SplunkOpenTelemetryLambdaL
 It should respond with something like the following: 
 
 ````
-Upload complete to s3://splunk-opentelemetry-lambda-layer-example/SplunkOpenTelemetryLambdaLayer-638665375222018560/packages.zip
-Layer publish with arn arn:aws:lambda:us-west-1:539254608140:layer:SplunkOpenTelemetryLambdaLayer:3
+Upload complete to s3://splunk-opentelemetry-lambda-layer-example/SplunkOpenTelemetryLambdaLayer-638665871802266230/packages.zip
+Layer publish with arn arn:aws:lambda:us-west-1:539254608140:layer:SplunkOpenTelemetryLambdaLayer:4
 ````
 
 Make a note of the ARN as we'll need it below. 
+
+### Add the Splunk OpenTelemetry Collector and Metrics Extension layers
+
+Our example deploys the Splunk distribution of the OpenTelemetry collector
+to a separate layer within the lambda function.  Lookup the ARN for your
+region in Step 6 in [this document](https://docs.splunk.com/observability/en/gdi/get-data-in/serverless/aws/otel-lambda-layer/instrumentation/lambda-language-layers.html#install-the-aws-lambda-layer-for-your-language).
+
+Let's make a copy of the template.yaml.base file:
+
+````
+cp template.yaml.base template.yaml
+````
+
+Then, open the template.yaml file and add the ARN there.  For example,
+here's the ARN for us-west-1:
+
+````
+      Layers:
+        - arn:aws:lambda:us-west-1:254067382080:layer:splunk-apm-collector:10
+````
+
+Optionally, we can also add the Splunk Metrics Extension Layer to the template.yaml file.
+Lookup the ARN for your
+region in Step 7 in [this document](https://docs.splunk.com/observability/en/gdi/get-data-in/serverless/aws/otel-lambda-layer/instrumentation/lambda-language-layers.html#install-the-aws-lambda-layer-for-your-language).
+
+````
+      Layers:
+        - arn:aws:lambda:us-west-1:254067382080:layer:splunk-apm-collector:10
+        - arn:aws:lambda:us-west-1:254067382080:layer:splunk-lambda-metrics:10
+````
+
+### Add the Splunk Observability Cloud Access Token and Realm
+
+We'll also need to specify the realm and access token for the target
+Splunk Observability Cloud environment.  This goes in the template.yaml
+file as well:
+
+````
+  Environment: 
+    Variables:
+      SPLUNK_ACCESS_TOKEN: <access token>
+      SPLUNK_REALM: us1
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment=test
+````
 
 ### Update the Lambda Function 
 
@@ -125,34 +169,48 @@ We also want to modify the template.yaml file to include the Lambda layer:
 
 ````
       Layers:
-        - arn:aws:lambda:us-west-1:539254608140:layer:SplunkOpenTelemetryLambdaLayer:3
+        - arn:aws:lambda:us-west-1:539254608140:layer:SplunkOpenTelemetryLambdaLayer:4
         - ...
 ````
 
 ### Build and Deploy Lambda Function
 
-We can build and deploy the Lambda function with the following command: 
+We can build the Lambda function with the following command: 
 
 ````
+cd splunk-opentelemetry-examples/instrumentation/dotnet/aws-lambda-with-custom-layer/src/HelloWorld
+dotnet build
+````
+
+We can then deploy the Lambda function with the following command: 
+
+````
+cd splunk-opentelemetry-examples/instrumentation/dotnet/aws-lambda-with-custom-layer/
 dotnet lambda deploy-serverless --region <MY_REGION> -t template.yaml -sb <MY_BUCKET_NAME>
 ````
 
 My exact command was: 
 
 ````
+cd splunk-opentelemetry-examples/instrumentation/dotnet/aws-lambda-with-custom-layer/
 dotnet lambda deploy-serverless --region us-west-1 -t template.yaml -sb splunk-opentelemetry-lambda-layer-example
 ````
+
+When prompted, I used `aws-lambda-dotnet-custom-layers` for the CloudFormation stack name. 
 
 Note that the `DOTNET_SHARED_STORE` environment variable was automatically added to the Lambda function 
 and set to `/opt/dotnetcore/store/`: 
 
 ![Lambda Environment Variables](./images/environment-variables.png)
 
+This tells the .NET Core runtime in Lambda where to look for the NuGet assemblies from the layer.
+
 Note also that the size of the Lambda function has been reduced from 3.4 MB to just 29 kB, since the bulk of the 
-assemblies it depends on have been moved to the Lambda layer: 
+assemblies it depends on have been moved to the layer: 
 
 ![Code Properties](./images/code-properties.png)
 
+When we invoke the Lambda function, we can see that traces have been captured in Splunk Observability Cloud, 
+which include the tag that was added via the SplunkTelemetryConfigurator class: 
 
-
-
+![Trace with tag](./images/trace.png)
