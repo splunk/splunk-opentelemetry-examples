@@ -63,7 +63,7 @@ It should return something like the following:
 
 ### Create an Empty Project
 
-Next, we created an empty project named [SplunkOpenTelemetryLambdaHelper](./src/SplunkOpenTelemetryLambdaHelper). 
+Next, we created an empty project named [SplunkOpenTelemetryLambdaLayer](./src/SplunkOpenTelemetryLambdaLayer). 
 This project only includes a .csproj file, which references the NuGet package we created and any other 
 dependencies used by our Lambda function. We'll use this project in the next step to publish the Lambda layer.
 
