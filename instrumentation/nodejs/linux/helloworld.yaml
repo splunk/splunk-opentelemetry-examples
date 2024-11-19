@@ -33,6 +33,8 @@ spec:
               value: "http://$(NODE_IP):4317"
             - name: OTEL_SERVICE_NAME
               value: "helloworld"
+            - name: SPLUNK_METRICS_ENABLED
+              value: "true"
             - name: SPLUNK_PROFILER_ENABLED
               value: "true"
             - name: SPLUNK_PROFILER_MEMORY_ENABLED

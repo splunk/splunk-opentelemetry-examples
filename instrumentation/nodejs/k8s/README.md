@@ -106,6 +106,8 @@ Node.js instrumentation gathers and exports data to the collector running within
       value: "http://$(NODE_IP):4317"
     - name: OTEL_SERVICE_NAME
       value: "helloworld"
+    - name: SPLUNK_METRICS_ENABLED
+      value: "true"
     - name: SPLUNK_PROFILER_ENABLED
       value: "true"
     - name: SPLUNK_PROFILER_MEMORY_ENABLED
@@ -138,6 +140,12 @@ appearing in Splunk Observability Cloud:
 Note that the trace has been decorated with Kubernetes attributes, such as `k8s.pod.name`
 and `k8s.pod.uid`.  This allows us to retain context when we navigate from APM to
 infrastructure data within Splunk Observability Cloud.
+
+### View AlwaysOn Profiling Data in Splunk Observability Cloud
+
+You should also see profiling data appear:
+
+![AlwaysOn Profiling Data](../linux/images/profiling.png)
 
 ### View Metrics in Splunk Observability Cloud
 

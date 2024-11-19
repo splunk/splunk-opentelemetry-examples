@@ -20,11 +20,12 @@ deployment environments:
 | Linux                  | [Link](./instrumentation/java/linux)           |                                             | [Link](./instrumentation/nodejs/linux)      |                                             |                                         |
 | Windows                |                                                |                                             |                                             |                                             |                                         |
 | Kubernetes             | [Link](./instrumentation/java/k8s)             | [Link](./instrumentation/dotnet/k8s)        | [Link](./instrumentation/nodejs/k8s)        |                                             |                                         |
-| AWS ECS Fargate        | [Link](./instrumentation/java/aws-ecs)         | [Link](./instrumentation/dotnet/aws-ecs)    |                                             |                                             |                                         |
+| AWS ECS Fargate        | [Link](./instrumentation/java/aws-ecs)         | [Link](./instrumentation/dotnet/aws-ecs)    | [Link](./instrumentation/nodejs/aws-ecs)    |                                             |                                         |
 | AWS EKS Fargate        | [Link](./instrumentation/java/aws-eks-fargate) |   |                                             |                                             |                                         |
 | AWS Lambda Function    | [Link](./instrumentation/java/aws-lambda)      | [Link](./instrumentation/dotnet/aws-lambda) | [Link](./instrumentation/nodejs/aws-lambda) | [Link](./instrumentation/python/aws-lambda) | [Link](./instrumentation/go/aws-lambda) |
 | Azure Function         |                                                |                                             |                                             |                                             |                                         |
 | Google Cloud Function  |                                                |                                             |                                             |                                             |                                         |
+| Azure Web Apps         |                                                |                                             |                                             |                                             |                                         |
 
 Examples for each combination will be added over time. 
 
