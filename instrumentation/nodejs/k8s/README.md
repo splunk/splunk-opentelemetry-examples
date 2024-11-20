@@ -52,6 +52,9 @@ You can use the following command to build the Docker image:
 docker build --platform="linux/amd64" -t helloworld-nodejs:1.0 .
 ````
 
+Ensure that you use a machine with a linux/amd64 architecture, as there are issues
+with AlwaysOn profiling when the image is built with arm64 architecture. 
+
 Note that the Dockerfile references the `@splunk/otel` package when launching the application: 
 
 ````
@@ -76,7 +79,7 @@ Specifically, we've pushed the
 image to GitHub's container repository using the following commands:
 
 ````
-docker tag helloworld:1.0 ghcr.io/splunk/helloworld-nodejs:1.0
+docker tag helloworld-nodejs:1.0 ghcr.io/splunk/helloworld-nodejs:1.0
 docker push ghcr.io/splunk/helloworld-nodejs:1.0
 ````
 
@@ -145,7 +148,7 @@ infrastructure data within Splunk Observability Cloud.
 
 You should also see profiling data appear:
 
-![AlwaysOn Profiling Data](../linux/images/profiling.png)
+![AlwaysOn Profiling Data](./images/profiling.png)
 
 ### View Metrics in Splunk Observability Cloud
 
