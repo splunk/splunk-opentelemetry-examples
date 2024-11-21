@@ -52,7 +52,7 @@ You can use the following command to build the Docker image:
 docker build --platform="linux/amd64" -t helloworld-nodejs:1.0 .
 ````
 
-Ensure that you use a machine with a linux/amd64 architecture, as there are issues
+Ensure that you use a machine with a linux/amd64 architecture to build the image, as there are issues
 with AlwaysOn profiling when the image is built with arm64 architecture. 
 
 Note that the Dockerfile references the `@splunk/otel` package when launching the application: 
