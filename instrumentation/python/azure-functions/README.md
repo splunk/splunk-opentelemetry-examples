@@ -1,1 +1,0 @@
-# splunk-opentelemetry-examples
